@@ -1,0 +1,23 @@
+trigger triggerApplication on Application__c (After update) {
+    if(trigger.isAfter && trigger.isUpdate){
+        Id canId;
+        set<id> jobIds = new set<id>();
+        for(Application__c app_new:Trigger.new){
+            for(Application__c app_old:Trigger.old){
+                if(app_new.status__c =='In-Process' && app_old.status__c=='Verified'){
+                    jobIds.add(app_new.Job__c);
+                    canId = app_new.Candidate__c;
+                }
+            }
+        }
+        List<Job_Posting__c> jobList=[select Id,Name,No_of_Interview_Rounds__c from Job_Posting__c Where id IN:jobIds];
+        for(Job_Posting__c job:jobList){
+            for(Integer i=1;i<=job.No_of_Interview_Rounds__c;i++){
+                Interview__c inv = new Interview__c();
+                inv.Candidate_Name__c = canId;
+                inv.Round_Name__c = 'Level '+i;
+                insert inv;
+            }
+        }
+    }
+}
